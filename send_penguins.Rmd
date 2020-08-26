@@ -1,0 +1,131 @@
+---
+title: "Email Compose"
+author: "Katie Masiello"
+date: "8/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(blastula)
+library(ggplot2)
+library(lubr)
+library(palmerpenguins) # for fun data
+```
+
+Let's create some interesting data that we want to email.
+```{r}
+head(penguins)
+
+# And let's plot something
+penguin_plot <- ggplot(penguins, aes(x = island, fill = species)) +
+  geom_bar(alpha = 0.8) +
+  scale_fill_manual(values = c("darkorange","purple","cyan4"),
+                    guide = FALSE) +
+  theme_minimal() +
+  facet_wrap(~species, ncol = 1) +
+  coord_flip()
+```
+
+Great data.  Now let's make an email with Blastula.
+
+Simplest case:
+```{r}
+# note you can use **markdown** formatting with the `md()` function
+message_1 <- blastula::compose_email(
+  body = md("Hello, 
+  
+  That penguin project is looking swell.  You should see the data collected to date on our dashboard.
+  
+  Stay cool, 
+  
+  Katie")
+)
+
+message_1
+```
+
+Basic email sending:
+Followed the instructions from https://rich-iannone.github.io/blastula/articles/sending_using_smtp.html
+Since I don't want my email credentials being shared, I will pass those as an environment variable using the `pass_envvar` argument in `smtp_send`. See https://github.com/rich-iannone/blastula/issues/149 and PR https://github.com/rich-iannone/blastula/pull/159
+```{r}
+message_1 %>%
+  smtp_send(
+    from = "katie.masiello@rstudio.com",
+    to = "katie.masiello@rstudio.com", #This will put everyone in the to line.  Use purrr::map() to iterate 
+    subject = "Penguins",
+    credentials = creds_envvar(
+  user = Sys.getenv("SMTP_USER"),
+  pass_envvar = "SMTP_PASSWORD",
+  provider = "gmail")
+  )
+
+```
+
+
+We can jazz it up with our plot:
+```{r}
+# Let's add some data
+plot_email <- blastula::add_ggplot(penguin_plot) # this is a helper function to make plots images for emailing
+
+message_2 <- blastula::compose_email(
+  body = md(paste("Hello, <br>
+                  Here is a plot of penguin data to date. <br>",
+                  plot_email, 
+                  "Stay cool, <br>
+                  Katie")), 
+  footer = md(paste0(
+        "Email sent by using the `blastula` package on ", Sys.Date(), "."
+      ))
+  )
+
+message_2
+```
+
+And send it with a little jazz in the subject line:
+```{r}
+days_remaining <- as.numeric(as.Date("2020-12-31")-Sys.Date()) #hypothetical timeline to end of penguin project
+
+message_2 %>%
+  smtp_send(
+    from = "katie.masiello@rstudio.com",
+    to = "katie.masiello@rstudio.com", #This will put everyone in the to line.  Use purrr::map() to iterate 
+    subject = paste(days_remaining,
+                    "days remain in the project and", 
+                    nrow(penguins), "penguin measurements are complete"),
+    credentials = creds_envvar(
+  user = Sys.getenv("SMTP_USER"),
+  pass_envvar = "SMTP_PASSWORD",
+  provider = "gmail"
+)
+  )
+```
+
+
+And to get fancy, make it conditional:
+```{r}
+#Let's only send the email on weekdays
+is_weekday <- (lubridate::wday(Sys.Date()) %in% c(2:6))
+
+if(is_weekday){
+  message_2 %>%
+  smtp_send(
+    from = "katie.masiello@rstudio.com",
+    to = "katie.masiello@rstudio.com", #This will put everyone in the to line.  Use purrr::map() to iterate 
+    subject = paste(days_remaining,
+                    "days remain in the project and", 
+                    nrow(penguins), "penguin measurements are complete"),
+    credentials = creds_envvar(
+  user = Sys.getenv("SMTP_USER"),
+  pass_envvar = "SMTP_PASSWORD",
+  provider = "gmail"
+)
+  )
+}
+```
+
+We should automate this:
+see https://github.com/kmasiello/email_distribution
