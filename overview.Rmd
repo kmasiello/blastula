@@ -1,0 +1,47 @@
+---
+title: "Blastula Overview"
+author: "Katie Masiello"
+date: "9/1/2020"
+output: xaringan::moon_reader
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(blastula)
+```
+
+name: overview
+# High Level Steps
+
+1. Create the email object in R 
+
+  * simple composition with `compose_email()`
+  * Rich composition with R Markdown and `render_email()` or `render_connect_email()`
+
+2. Jazz it up
+
+  * `add_attachment()`
+  * `add_cta_button()`
+  * `add_ggplot()`
+  * `add_image()`
+  * `add_imgur_image()` 
+
+3. Send the email
+
+  * `smtp_send()` 
+  * `attach_connect_email()` 
+---
+# Spice it up with RStudio Connect
+
+A few ideas to get the ideas flowing 
+
+* Conditional Emails
+
+  * Send an email only if certain criteria are met (e.g., threshold parameter exeeded) 
+  * Send different emails depending on conditions 
+  * Example: [https://solutions.rstudio.com/examples/blastula/conditional-example](https://solutions.rstudio.com/examples/blastula/conditional-example) 
+  
+* Include logging information in your ETL document to provide a historical record of _who_ got your email, _when_ 
+
+  * Example: [https://colorado.rstudio.com/rsc/connect/#/apps/6847/access/3913](https://colorado.rstudio.com/rsc/connect/#/apps/6847/access/3913)
+
