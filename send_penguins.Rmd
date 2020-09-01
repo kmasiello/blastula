@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r packages}
 library(blastula)
 library(ggplot2)
-library(lubr)
 library(palmerpenguins) # for fun data
 ```
 
@@ -71,12 +70,21 @@ We can jazz it up with our plot:
 # Let's add some data
 plot_email <- blastula::add_ggplot(penguin_plot) # this is a helper function to make plots images for emailing
 
+#and a button
+cta_button <-
+  add_cta_button(
+    url = "https://github.com/allisonhorst/palmerpenguins",
+    text = "Meet the Penguins!")
+
 message_2 <- blastula::compose_email(
-  body = md(paste("Hello, <br>
+  body = md(
+    c("Hello, <br>
                   Here is a plot of penguin data to date. <br>",
                   plot_email, 
+      cta_button,
                   "Stay cool, <br>
-                  Katie")), 
+                  Katie")
+  ), 
   footer = md(paste0(
         "Email sent by using the `blastula` package on ", Sys.Date(), "."
       ))
@@ -105,17 +113,15 @@ message_2 %>%
 ```
 
 
-And to get fancy, make it conditional:
+What if we wanted to create our email in R Markdown?
 ```{r}
-#Let's only send the email on weekdays
-is_weekday <- (lubridate::wday(Sys.Date()) %in% c(2:6))
+message_3 <- render_email("penguin-email.Rmd")
 
-if(is_weekday){
-  message_2 %>%
+message_3 %>% 
   smtp_send(
     from = "katie.masiello@rstudio.com",
-    to = "katie.masiello@rstudio.com", #This will put everyone in the to line.  Use purrr::map() to iterate 
-    subject = paste(days_remaining,
+    to = "katie.masiello@rstudio.com", 
+    subject = paste("Rmd rendered:", days_remaining,
                     "days remain in the project and", 
                     nrow(penguins), "penguin measurements are complete"),
     credentials = creds_envvar(
@@ -123,9 +129,9 @@ if(is_weekday){
   pass_envvar = "SMTP_PASSWORD",
   provider = "gmail"
 )
-  )
-}
+)
 ```
 
-We should automate this:
-see https://github.com/kmasiello/email_distribution
+Take this further with condition based emailing.  Suppress the email unless a criteria is met; or send different emails depending on the criteria:
+https://solutions.rstudio.com/examples/blastula/conditional-example
+
